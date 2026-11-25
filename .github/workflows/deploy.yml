@@ -1,0 +1,44 @@
+name: Deploy EduTest to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -e
+            APP_DIR="/var/www/edutest"
+            mkdir -p $APP_DIR
+            cd $APP_DIR
+
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/${{ github.repository }}.git .
+            else
+              git fetch --all
+              git reset --hard origin/main
+            fi
+
+            # Backend
+            cd $APP_DIR/BE
+            npm ci --omit=dev || npm install --omit=dev
+            pm2 describe edutest-be > /dev/null 2>&1 && pm2 restart edutest-be || pm2 start src/server.js --name edutest-be
+
+            # Frontend
+            cd $APP_DIR/FE
+            pnpm install --frozen-lockfile || pnpm install
+            pnpm build
+            pm2 describe edutest-fe > /dev/null 2>&1 && pm2 restart edutest-fe || pm2 start pnpm --name edutest-fe -- start
+
+            pm2 save

@@ -1,0 +1,92 @@
+{
+  "pins": {
+    "1_1": {
+      "examId": 1,
+      "classId": 1,
+      "pinCode": "967393",
+      "isPinRequired": true,
+      "updatedAt": "2026-11-07T08:14:21.278Z"
+    },
+    "8_1": {
+      "examId": 8,
+      "classId": 1,
+      "pinCode": "224555",
+      "isPinRequired": true,
+      "updatedAt": "2026-10-29T04:56:12.702Z"
+    },
+    "9_1": {
+      "examId": 9,
+      "classId": 1,
+      "pinCode": "349829",
+      "isPinRequired": true,
+      "updatedAt": "2026-10-29T04:48:24.721Z"
+    },
+    "1_2": {
+      "examId": 1,
+      "classId": 2,
+      "pinCode": "265877",
+      "isPinRequired": true,
+      "updatedAt": "2026-10-29T04:56:10.387Z"
+    },
+    "2_1": {
+      "examId": 2,
+      "classId": 1,
+      "pinCode": "254776",
+      "isPinRequired": true,
+      "updatedAt": "2026-10-29T04:56:10.388Z"
+    },
+    "3_3": {
+      "examId": 3,
+      "classId": 3,
+      "pinCode": "317715",
+      "isPinRequired": true,
+      "updatedAt": "2026-10-29T04:56:10.389Z"
+    }
+  },
+  "deviceLocks": {
+    "999_1": {
+      "studentId": 999,
+      "studentCode": "HS999",
+      "studentName": "Học sinh",
+      "examId": 1,
+      "classId": 1,
+      "deviceId": "DEV_A",
+      "deviceName": "Chrome PC 1",
+      "lockedAt": "2026-10-29T04:33:15.635Z",
+      "lastActiveAt": "2026-10-29T04:33:15.636Z",
+      "status": "completed"
+    },
+    "11_8": {
+      "studentId": 11,
+      "studentCode": "HS_STUDENT",
+      "studentName": "Student Demo",
+      "examId": 8,
+      "classId": 1,
+      "deviceId": "DEV-YMM7KR-IOXA",
+      "deviceName": "Chrome trên Windows (DEV-YMM7KR)",
+      "lockedAt": "2026-10-29T04:56:21.797Z",
+      "lastActiveAt": "2026-10-29T04:56:29.660Z",
+      "status": "completed"
+    }
+  },
+  "studentRecovery": {
+    "11": {
+      "recoveredQuestionIds": [
+        2
+      ],
+      "mistakeCounts": {
+        "1": 2,
+        "2": 1,
+        "5": 2,
+        "10": 2,
+        "11": 2,
+        "16": 3,
+        "17": 3,
+        "19": 1,
+        "21": 2
+      },
+      "lastPracticedAt": "2026-11-07T08:22:22.386Z",
+      "sessionsCount": 2
+    }
+  }
+}

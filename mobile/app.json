@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "EduTest Học Sinh",
+    "slug": "edutest-student",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#080b13"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.edutest.student"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#080b13"
+      },
+      "package": "com.edutest.student"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-asset",
+      "expo-font"
+    ]
+  }
+}

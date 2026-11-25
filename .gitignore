@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build & Cache
+.next/
+**/.next/
+.expo/
+**/.expo/
+dist/
+**/dist/
+out/
+*.tsbuildinfo
+**/*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Report tools
+BaoCao/tools/
+
+# OS
+.DS_Store
+Thumbs.db
