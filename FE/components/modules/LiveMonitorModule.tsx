@@ -167,28 +167,18 @@ const QUICK_BROADCAST_TEMPLATES = [
 
 export default function LiveMonitorModule({ onBack, embedded = false }: { onBack?: () => void; embedded?: boolean }) {
   const { user } = useAuth()
-  const [examId, setExamId] = useState<number>(1)
-  const [classId, setClassId] = useState<number>(1)
-  const [examsList, setExamsList] = useState<{ id: number; code: string; title: string; total_questions: number }[]>([
-    { id: 1, code: 'DE_TOAN_10_01', title: 'Kiểm tra 15p - Hàm số bậc hai', total_questions: 5 },
-    { id: 2, code: 'DE_LY_10_01', title: 'Ôn tập Vật Lý 10 - Động học', total_questions: 3 }
-  ])
-  const [classesList, setClassesList] = useState<{ id: number; name: string; student_count?: number }[]>([
-    { id: 1, name: '10A1', student_count: 5 },
-    { id: 2, name: '10A2', student_count: 2 }
-  ])
+  const [examId, setExamId] = useState<number>(0)
+  const [classId, setClassId] = useState<number>(0)
+  const [examsList, setExamsList] = useState<{ id: number; code: string; title: string; total_questions: number; assignments?: any[] }[]>([])
+  const [classesList, setClassesList] = useState<{ id: number; name: string; student_count?: number }[]>([])
 
   const [isOpenExam, setIsOpenExam] = useState(true)
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [studentList, setStudentList] = useState<StudentMonitorItem[]>(fallbackStudents)
+  const [studentList, setStudentList] = useState<StudentMonitorItem[]>([])
   const [elapsedTimer, setElapsedTimer] = useState(512)
   const [socketConnected, setSocketConnected] = useState(false)
-  const [liveEvents, setLiveEvents] = useState<{ id: string; title: string; desc: string; time: string; type: string }[]>([
-    { id: '1', title: 'Nguyễn Văn An vừa nộp bài', desc: 'Đạt 8.0/10 điểm · Thưởng +40 xu', time: '10m', type: 'emerald' },
-    { id: '2', title: 'Lê Thị Bích bắt đầu làm bài', desc: 'Đang làm trong phòng thi (Đã đảo mã đề)', time: '8m', type: 'amber' },
-    { id: '3', title: 'Lớp 10A1: Đã bật mở phát đề', desc: 'Đề thi: DE_TOAN_10_01', time: '15m', type: 'violet' }
-  ])
+  const [liveEvents, setLiveEvents] = useState<{ id: string; title: string; desc: string; time: string; type: string }[]>([])
 
   // Live Teacher-Student Broadcast State
   const [broadcastMessage, setBroadcastMessage] = useState('')
@@ -261,23 +251,38 @@ export default function LiveMonitorModule({ onBack, embedded = false }: { onBack
     } catch {}
   }
 
-  // Fetch exams & classes metadata
+  // Fetch exams & classes metadata và tự động chọn đề/lớp đang mở thi thật từ DB
   useEffect(() => {
-    api.exams.getAll().then((res) => {
-      if (Array.isArray(res.data) && res.data.length > 0) {
-        setExamsList(res.data)
-      }
-    }).catch(() => {})
+    Promise.all([
+      api.exams.getAll({ limit: 100 }).catch(() => ({ data: [] })),
+      api.classrooms.getAll().catch(() => ({ data: [] }))
+    ]).then(([exRes, clRes]) => {
+      const exams = Array.isArray(exRes?.data) ? exRes.data : []
+      const classes = Array.isArray(clRes?.data) ? clRes.data : []
 
-    api.classrooms.getAll().then((res) => {
-      if (Array.isArray(res.data) && res.data.length > 0) {
-        setClassesList(res.data)
+      if (exams.length > 0) {
+        setExamsList(exams)
+        const activeExam = exams.find((ex: any) => Array.isArray(ex.assignments) && ex.assignments.some((a: any) => a.is_open)) || exams[0]
+        setExamId((prev) => (exams.some((ex: any) => ex.id === prev) ? prev : activeExam.id))
+
+        if (classes.length > 0) {
+          setClassesList(classes)
+          const openAssignment = Array.isArray(activeExam.assignments)
+            ? activeExam.assignments.find((a: any) => a.is_open) || activeExam.assignments[0]
+            : null
+          const targetClassId = openAssignment?.class_id || classes[0].id
+          setClassId((prev) => (classes.some((c: any) => c.id === prev) ? prev : targetClassId))
+        }
+      } else if (classes.length > 0) {
+        setClassesList(classes)
+        setClassId((prev) => (classes.some((c: any) => c.id === prev) ? prev : classes[0].id))
       }
-    }).catch(() => {})
+    })
   }, [])
 
   // Fetch real monitoring data from Backend API
   const fetchLiveMonitoring = async () => {
+    if (!examId || !classId) return
     try {
       const res = await api.monitor.getClassExamMonitoring(examId, classId)
       if (res.data?.students) {
@@ -304,12 +309,14 @@ export default function LiveMonitorModule({ onBack, embedded = false }: { onBack
         }
       }
     } catch (err: any) {
-      console.debug('Using fallback monitoring data:', err.message)
+      console.debug('Error fetching monitoring data:', err.message)
+      setStudentList([])
     }
   }
 
   // Socket.IO real-time subscription
   useEffect(() => {
+    if (!examId || !classId) return
     fetchLiveMonitoring()
     fetchExamSecurity(examId, classId)
 
@@ -611,7 +618,18 @@ export default function LiveMonitorModule({ onBack, embedded = false }: { onBack
             <span style={{ fontSize: 12, color: 'var(--muted)', flexShrink: 0, whiteSpace: 'nowrap' }}>Đề thi:</span>
             <select
               value={examId}
-              onChange={(e) => setExamId(Number(e.target.value))}
+              onChange={(e) => {
+                const nextExamId = Number(e.target.value)
+                setExamId(nextExamId)
+                const selectedExam = examsList.find((ex) => ex.id === nextExamId)
+                if (Array.isArray(selectedExam?.assignments) && selectedExam.assignments.length > 0) {
+                  const hasCurrentClass = selectedExam.assignments.some((a: any) => a.class_id === classId)
+                  if (!hasCurrentClass) {
+                    const openAss = selectedExam.assignments.find((a: any) => a.is_open) || selectedExam.assignments[0]
+                    if (openAss?.class_id) setClassId(openAss.class_id)
+                  }
+                }
+              }}
               style={{ background: '#121727', border: '1px solid var(--line)', color: '#fff', borderRadius: 8, padding: '6px 12px', fontSize: 13, outline: 'none', flex: 1, minWidth: 0, width: '100%', maxWidth: '100%', textOverflow: 'ellipsis', cursor: 'pointer' }}
             >
               {examsList.map((ex) => (
@@ -632,7 +650,7 @@ export default function LiveMonitorModule({ onBack, embedded = false }: { onBack
             >
               {classesList.map((cl) => (
                 <option key={cl.id} value={cl.id} style={{ background: '#121727' }}>
-                  Lớp {cl.name}
+                  {cl.name.startsWith('Lớp') ? cl.name : `Lớp ${cl.name}`}
                 </option>
               ))}
             </select>
@@ -1259,7 +1277,7 @@ export default function LiveMonitorModule({ onBack, embedded = false }: { onBack
                             </span>
                           )}
                         </div>
-                        <span>{student.code} · Lớp {currentClassName}</span>
+                        <span>{student.code} · {currentClassName.startsWith('Lớp') ? currentClassName : `Lớp ${currentClassName}`}</span>
                       </div>
                     </div>
 
