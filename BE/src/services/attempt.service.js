@@ -78,7 +78,8 @@ class AttemptService {
       answerMap[ans.question_id] = ans.selected_option_id;
     });
 
-    let totalScore = 0;
+    let rawScore = 0;
+    let maxPossibleScore = 0;
     let correctCount = 0;
     const detailRecords = [];
     const evaluationResults = [];
@@ -99,10 +100,11 @@ class AttemptService {
       const selectedOptionId = answerMap[q.id] || null;
       const isCorrect = Boolean(selectedOptionId && selectedOptionId === qMeta.correctOptionId);
 
+      maxPossibleScore += qMeta.points;
       const pointsEarned = isCorrect ? qMeta.points : 0;
       if (isCorrect) {
         correctCount += 1;
-        totalScore += pointsEarned;
+        rawScore += pointsEarned;
       }
 
       detailRecords.push({
@@ -136,6 +138,10 @@ class AttemptService {
     });
 
     const totalQuestionsCount = orderedQuestionsForGrading.length;
+    // Chuẩn hóa điểm về thang điểm 10 (tránh vượt quá 10 khi đề có nhiều câu hoặc points > 1)
+    const totalScore = maxPossibleScore > 0
+      ? Number(((rawScore / maxPossibleScore) * 10).toFixed(2))
+      : 0;
 
     // Quy định tích điểm và thưởng xu
     const coinsPerCorrect = Number(process.env.COINS_PER_CORRECT_ANSWER) || 10;
